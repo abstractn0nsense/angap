@@ -16,11 +16,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -49,9 +52,12 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun PhotoSendGuideApp() {
     var isGuideOpen by rememberSaveable { mutableStateOf(false) }
+    var isPrivacyOpen by rememberSaveable { mutableStateOf(false) }
     var currentStepIndex by rememberSaveable { mutableIntStateOf(0) }
 
-    if (isGuideOpen) {
+    when {
+        isPrivacyOpen -> PrivacyScreen(onClose = { isPrivacyOpen = false })
+        isGuideOpen -> {
         BackHandler {
             if (currentStepIndex > 0) {
                 currentStepIndex--
@@ -68,13 +74,19 @@ private fun PhotoSendGuideApp() {
                 isGuideOpen = false
             },
         )
-    } else {
-        HomeScreen(onStart = { isGuideOpen = true })
+        }
+        else -> HomeScreen(
+            onStart = { isGuideOpen = true },
+            onShowPrivacy = { isPrivacyOpen = true },
+        )
     }
 }
 
 @Composable
-private fun HomeScreen(onStart: () -> Unit) {
+private fun HomeScreen(
+    onStart: () -> Unit,
+    onShowPrivacy: () -> Unit,
+) {
     var showPermissionExplanation by rememberSaveable { mutableStateOf(false) }
     var showMessagingAppUnavailable by rememberSaveable { mutableStateOf(false) }
 
@@ -115,6 +127,12 @@ private fun HomeScreen(onStart: () -> Unit) {
                 style = MaterialTheme.typography.titleLarge,
             )
         }
+        TextButton(
+            onClick = onShowPrivacy,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("개인정보 안내", style = MaterialTheme.typography.titleMedium)
+        }
 
         if (showPermissionExplanation) {
             OverlayPermissionDialog(
@@ -134,6 +152,43 @@ private fun HomeScreen(onStart: () -> Unit) {
                     }
                 },
             )
+        }
+    }
+}
+
+@Composable
+private fun PrivacyScreen(onClose: () -> Unit) {
+    BackHandler(onBack = onClose)
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(
+            text = "개인정보 안내",
+            modifier = Modifier.semantics { heading() },
+            style = MaterialTheme.typography.headlineLarge,
+        )
+        Text(
+            text = "이 앱은 연락처, 사진, 메시지 내용 등 개인 정보를 읽거나 저장하지 않습니다.",
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Text(
+            text = "다른 앱 위에 표시 권한은 메시지 앱을 보면서 단계 안내를 띄우는 데에만 사용합니다.",
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Text(
+            text = "사진과 수신자는 메시지 앱에서 사용자가 직접 선택하며, 이 앱은 접근하지 않습니다.",
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Button(
+            onClick = onClose,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("처음으로", style = MaterialTheme.typography.titleLarge)
         }
     }
 }
@@ -280,6 +335,6 @@ private fun PhotoSendingGuide(
 @Composable
 private fun PhotoSendGuideAppPreview() {
     PhotoSendGuideTheme {
-        HomeScreen(onStart = {})
+        HomeScreen(onStart = {}, onShowPrivacy = {})
     }
 }
