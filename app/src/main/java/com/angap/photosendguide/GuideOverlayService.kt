@@ -61,18 +61,18 @@ class GuideOverlayService : Service() {
             val progress = TextView(context).apply {
                 tag = "progress"
                 setTextColor(Color.DKGRAY)
-                textSize = 18f
+                textSize = 20f
             }
             val title = TextView(context).apply {
                 tag = "title"
                 setTextColor(Color.BLACK)
-                textSize = 26f
+                textSize = 28f
                 setPadding(0, 12.dp, 0, 8.dp)
             }
             val description = TextView(context).apply {
                 tag = "description"
                 setTextColor(Color.DKGRAY)
-                textSize = 20f
+                textSize = 22f
             }
             val buttons = LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -81,6 +81,7 @@ class GuideOverlayService : Service() {
             }
             val previous = Button(context).apply {
                 text = "이전"
+                minimumHeight = 56.dp
                 setOnClickListener {
                     if (currentStepIndex > 0) {
                         currentStepIndex--
@@ -90,6 +91,7 @@ class GuideOverlayService : Service() {
             }
             val next = Button(context).apply {
                 tag = "next"
+                minimumHeight = 56.dp
                 setOnClickListener {
                     if (currentStepIndex == guideSteps.lastIndex) stopSelf() else {
                         currentStepIndex++
@@ -99,6 +101,7 @@ class GuideOverlayService : Service() {
             }
             val close = Button(context).apply {
                 text = "닫기"
+                minimumHeight = 56.dp
                 setOnClickListener { stopSelf() }
             }
 

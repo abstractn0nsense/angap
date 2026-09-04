@@ -28,6 +28,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.angap.photosendguide.ui.theme.PhotoSendGuideTheme
@@ -77,6 +79,7 @@ private fun HomeScreen(onStart: () -> Unit) {
     ) {
         Text(
             text = "사진 보내기 도우미",
+            modifier = Modifier.semantics { heading() },
             style = MaterialTheme.typography.headlineLarge,
         )
         Text(
@@ -209,6 +212,7 @@ private fun PhotoSendingGuide(
         Column {
             Text(
                 text = "사진 보내기",
+                modifier = Modifier.semantics { heading() },
                 style = MaterialTheme.typography.headlineMedium,
             )
             Text(
@@ -219,6 +223,7 @@ private fun PhotoSendingGuide(
             Spacer(modifier = Modifier.size(36.dp))
             Text(
                 text = step.title,
+                modifier = Modifier.semantics { heading() },
                 style = MaterialTheme.typography.headlineLarge,
             )
             Text(
