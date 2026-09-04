@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.IBinder
+import android.provider.Settings
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -18,14 +19,18 @@ class GuideOverlayService : Service() {
     private var currentStepIndex = 0
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (overlayView == null) showOverlay()
+        if (!Settings.canDrawOverlays(this)) {
+            stopSelf(startId)
+        } else if (overlayView == null) {
+            showOverlay()
+        }
         return START_NOT_STICKY
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        overlayView?.let(windowManager::removeView)
+        overlayView?.let { view -> runCatching { windowManager.removeView(view) } }
         overlayView = null
         super.onDestroy()
     }
@@ -43,9 +48,14 @@ class GuideOverlayService : Service() {
             gravity = Gravity.BOTTOM
         }
 
-        overlayView = content
-        windowManager.addView(content, layoutParams)
-        updateContent()
+        try {
+            overlayView = content
+            windowManager.addView(content, layoutParams)
+            updateContent()
+        } catch (_: SecurityException) {
+            overlayView = null
+            stopSelf()
+        }
     }
 
     private fun createOverlayContent(): View {

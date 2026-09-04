@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +52,13 @@ private fun PhotoSendGuideApp() {
     var currentStepIndex by rememberSaveable { mutableIntStateOf(0) }
 
     if (isGuideOpen) {
+        BackHandler {
+            if (currentStepIndex > 0) {
+                currentStepIndex--
+            } else {
+                isGuideOpen = false
+            }
+        }
         PhotoSendingGuide(
             currentStepIndex = currentStepIndex,
             onPrevious = { currentStepIndex-- },
