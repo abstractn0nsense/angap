@@ -1,5 +1,7 @@
 package com.angap.photosendguide
 
+import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -64,6 +66,7 @@ private fun PhotoSendGuideApp() {
 @Composable
 private fun HomeScreen(onStart: () -> Unit) {
     var showPermissionExplanation by rememberSaveable { mutableStateOf(false) }
+    var showMessagingAppUnavailable by rememberSaveable { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -105,13 +108,30 @@ private fun HomeScreen(onStart: () -> Unit) {
         if (showPermissionExplanation) {
             OverlayPermissionDialog(
                 onDismiss = { showPermissionExplanation = false },
+                onMessagingAppUnavailable = { showMessagingAppUnavailable = true },
+            )
+        }
+
+        if (showMessagingAppUnavailable) {
+            AlertDialog(
+                onDismissRequest = { showMessagingAppUnavailable = false },
+                title = { Text("메시지 앱을 열 수 없어요") },
+                text = { Text("휴대전화에 기본 메시지 앱이 설정되어 있는지 확인한 뒤 다시 시도해 주세요.") },
+                confirmButton = {
+                    Button(onClick = { showMessagingAppUnavailable = false }) {
+                        Text("확인")
+                    }
+                },
             )
         }
     }
 }
 
 @Composable
-private fun OverlayPermissionDialog(onDismiss: () -> Unit) {
+private fun OverlayPermissionDialog(
+    onDismiss: () -> Unit,
+    onMessagingAppUnavailable: () -> Unit,
+) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val isPermissionGranted = Settings.canDrawOverlays(context)
 
@@ -133,6 +153,10 @@ private fun OverlayPermissionDialog(onDismiss: () -> Unit) {
                     if (isPermissionGranted) {
                         context.startService(Intent(context, GuideOverlayService::class.java))
                         onDismiss()
+                        if (!openMessagingApp(context)) {
+                            context.stopService(Intent(context, GuideOverlayService::class.java))
+                            onMessagingAppUnavailable()
+                        }
                     } else {
                         context.startActivity(
                             Intent(
@@ -152,6 +176,17 @@ private fun OverlayPermissionDialog(onDismiss: () -> Unit) {
             }
         },
     )
+}
+
+private fun openMessagingApp(context: Context): Boolean {
+    return try {
+        context.startActivity(
+            Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:")),
+        )
+        true
+    } catch (_: ActivityNotFoundException) {
+        false
+    }
 }
 
 @Composable
