@@ -1,6 +1,9 @@
 package com.angap.photosendguide
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -60,6 +63,8 @@ private fun PhotoSendGuideApp() {
 
 @Composable
 private fun HomeScreen(onStart: () -> Unit) {
+    var showPermissionExplanation by rememberSaveable { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -80,43 +85,74 @@ private fun HomeScreen(onStart: () -> Unit) {
         Button(
             onClick = onStart,
             modifier = Modifier.fillMaxWidth(),
-            contentPadding = ButtonDefaults.ContentPadding,
         ) {
             Text(
                 text = "사진 보내기 시작",
                 style = MaterialTheme.typography.titleLarge,
             )
         }
+        Spacer(modifier = Modifier.size(12.dp))
+        OutlinedButton(
+            onClick = { showPermissionExplanation = true },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = "다른 앱 위에서 안내 보기",
+                style = MaterialTheme.typography.titleLarge,
+            )
+        }
+
+        if (showPermissionExplanation) {
+            OverlayPermissionDialog(
+                onDismiss = { showPermissionExplanation = false },
+            )
+        }
     }
 }
 
-private data class GuideStep(
-    val title: String,
-    val description: String,
-)
+@Composable
+private fun OverlayPermissionDialog(onDismiss: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isPermissionGranted = Settings.canDrawOverlays(context)
 
-private val guideSteps = listOf(
-    GuideStep(
-        title = "메시지 앱을 여세요",
-        description = "휴대전화에서 메시지 앱을 찾아 눌러 주세요.",
-    ),
-    GuideStep(
-        title = "자녀와의 대화를 고르세요",
-        description = "사진을 보낼 자녀의 이름이 있는 대화를 눌러 주세요.",
-    ),
-    GuideStep(
-        title = "사진 버튼을 누르세요",
-        description = "메시지 입력칸 근처의 사진 또는 + 버튼을 눌러 주세요.",
-    ),
-    GuideStep(
-        title = "보낼 사진을 고르세요",
-        description = "사진 목록에서 보내고 싶은 사진을 한 번 눌러 선택해 주세요.",
-    ),
-    GuideStep(
-        title = "보내기 버튼을 누르세요",
-        description = "선택한 사진을 확인한 뒤, 보내기 버튼을 눌러 주세요.",
-    ),
-)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("다른 앱 위에 안내를 표시할까요?") },
+        text = {
+            Text(
+                if (isPermissionGranted) {
+                    "안내창을 표시합니다. 언제든 안내창의 닫기 버튼으로 끝낼 수 있습니다."
+                } else {
+                    "메시지 앱을 보면서 안내를 받으려면 ‘다른 앱 위에 표시’ 권한이 필요합니다. 메시지나 사진 내용은 읽지 않습니다."
+                },
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (isPermissionGranted) {
+                        context.startService(Intent(context, GuideOverlayService::class.java))
+                        onDismiss()
+                    } else {
+                        context.startActivity(
+                            Intent(
+                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                Uri.parse("package:${context.packageName}"),
+                            ),
+                        )
+                    }
+                },
+            ) {
+                Text(if (isPermissionGranted) "안내 시작" else "권한 설정")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Text("취소")
+            }
+        },
+    )
+}
 
 @Composable
 private fun PhotoSendingGuide(
