@@ -5,11 +5,22 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,6 +40,26 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun PhotoSendGuideApp() {
+    var isGuideOpen by rememberSaveable { mutableStateOf(false) }
+    var currentStepIndex by rememberSaveable { mutableIntStateOf(0) }
+
+    if (isGuideOpen) {
+        PhotoSendingGuide(
+            currentStepIndex = currentStepIndex,
+            onPrevious = { currentStepIndex-- },
+            onNext = { currentStepIndex++ },
+            onClose = {
+                currentStepIndex = 0
+                isGuideOpen = false
+            },
+        )
+    } else {
+        HomeScreen(onStart = { isGuideOpen = true })
+    }
+}
+
+@Composable
+private fun HomeScreen(onStart: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -38,13 +69,126 @@ private fun PhotoSendGuideApp() {
     ) {
         Text(
             text = "사진 보내기 도우미",
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineLarge,
         )
         Text(
             text = "사진을 보내는 방법을 차근차근 안내해 드립니다.",
             modifier = Modifier.padding(top = 12.dp),
             style = MaterialTheme.typography.bodyLarge,
         )
+        Spacer(modifier = Modifier.size(32.dp))
+        Button(
+            onClick = onStart,
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = ButtonDefaults.ContentPadding,
+        ) {
+            Text(
+                text = "사진 보내기 시작",
+                style = MaterialTheme.typography.titleLarge,
+            )
+        }
+    }
+}
+
+private data class GuideStep(
+    val title: String,
+    val description: String,
+)
+
+private val guideSteps = listOf(
+    GuideStep(
+        title = "메시지 앱을 여세요",
+        description = "휴대전화에서 메시지 앱을 찾아 눌러 주세요.",
+    ),
+    GuideStep(
+        title = "자녀와의 대화를 고르세요",
+        description = "사진을 보낼 자녀의 이름이 있는 대화를 눌러 주세요.",
+    ),
+    GuideStep(
+        title = "사진 버튼을 누르세요",
+        description = "메시지 입력칸 근처의 사진 또는 + 버튼을 눌러 주세요.",
+    ),
+    GuideStep(
+        title = "보낼 사진을 고르세요",
+        description = "사진 목록에서 보내고 싶은 사진을 한 번 눌러 선택해 주세요.",
+    ),
+    GuideStep(
+        title = "보내기 버튼을 누르세요",
+        description = "선택한 사진을 확인한 뒤, 보내기 버튼을 눌러 주세요.",
+    ),
+)
+
+@Composable
+private fun PhotoSendingGuide(
+    currentStepIndex: Int,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onClose: () -> Unit,
+) {
+    val step = guideSteps[currentStepIndex]
+    val isFirstStep = currentStepIndex == 0
+    val isLastStep = currentStepIndex == guideSteps.lastIndex
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column {
+            Text(
+                text = "사진 보내기",
+                style = MaterialTheme.typography.headlineMedium,
+            )
+            Text(
+                text = "${currentStepIndex + 1} / ${guideSteps.size} 단계",
+                modifier = Modifier.padding(top = 12.dp),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Spacer(modifier = Modifier.size(36.dp))
+            Text(
+                text = step.title,
+                style = MaterialTheme.typography.headlineLarge,
+            )
+            Text(
+                text = step.description,
+                modifier = Modifier.padding(top = 20.dp),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (isLastStep) {
+                Button(
+                    onClick = onClose,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("안내 마치기", style = MaterialTheme.typography.titleLarge)
+                }
+            } else {
+                Button(
+                    onClick = onNext,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("다음", style = MaterialTheme.typography.titleLarge)
+                }
+            }
+
+            if (!isFirstStep) {
+                OutlinedButton(
+                    onClick = onPrevious,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("이전", style = MaterialTheme.typography.titleLarge)
+                }
+            }
+            OutlinedButton(
+                onClick = onClose,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("처음으로", style = MaterialTheme.typography.titleLarge)
+            }
+        }
     }
 }
 
@@ -52,6 +196,6 @@ private fun PhotoSendGuideApp() {
 @Composable
 private fun PhotoSendGuideAppPreview() {
     PhotoSendGuideTheme {
-        PhotoSendGuideApp()
+        HomeScreen(onStart = {})
     }
 }
